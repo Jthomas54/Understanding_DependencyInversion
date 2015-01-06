@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Examples
 {
@@ -16,10 +13,8 @@ namespace Examples
     {
         private readonly List<IUser> _Users;
 
-        //Need empty ctor at the moment so the registry resolves it correctly...FIX THIS
-        public InMemoryUserRepo() {}
-
-        //Testing the injection of another type to make sure it resolves sub-dependencies 
+        //Testing the injection of another type to make sure it resolves sub-dependencies
+        //Yes, this is a horrible example of DI :P
         public InMemoryUserRepo(IUser user)
         {
             _Users = new List<IUser>()
