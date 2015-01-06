@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DependOnMe
 {
     /// <summary>
-    /// A simple Dependency Inversion class
+    /// A simple Dependency Inversion class that uses constructor injection
     /// </summary>
     public class Registry
     {
@@ -44,39 +42,45 @@ namespace DependOnMe
 
         private object GetInstance(Type type)
         {
+            if (!IsRegisteredType(type)) throw new Exception("The ctor requires a type that isn't registered with the registry.");
+
             //Find the type to resolve from the requested type
             var concreteType = _internalRegistry[type];
 
-            var ctors = concreteType.GetConstructors();
+            return CreateInstance(concreteType);
+        }
 
-            if (ctors.Count() > 1)
+        /// <summary>
+        /// Creates an instance of the provided type as long as it is registered with the registry
+        /// </summary>
+        /// <param name="t">The type to instantiate</param>
+        /// <returns>An instance of the provided type</returns>
+        private object CreateInstance(Type t)
+        {
+            //Get all the public ctors and select the one with the most parameters
+            var ctor = t.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
+                        .OrderBy(c => c.GetParameters().Length)
+                        .LastOrDefault();
+
+            if(ctor == null) throw new Exception(string.Format("{0} doesn't have an accessible ctor", t.Name));
+
+            if (ctor.GetParameters().Any())
             {
-                //Get the ctor that has the most parameters
-                var maxParameters = ctors.Max(c => c.GetParameters().Count());
-                var targetCtor = ctors.First(c => c.GetParameters().Count() == maxParameters);
-
                 //Check ctor dependencies
                 var args = new List<object>();
 
-                foreach (var param in targetCtor.GetParameters())
+                foreach (var param in ctor.GetParameters())
                 {
                     var paramType = param.ParameterType;
 
-                    if (IsRegisteredType(paramType))
-                    {
-                        args.Add(GetInstance(paramType));
-                    }
-                    else
-                    {
-                        //TODO (Justin): make special exception for this?
-                        throw new Exception("The ctor requires a type that isn't registered with the registry.");
-                    }
+                    args.Add(GetInstance(paramType));
+
                 }
 
-                return Activator.CreateInstance(concreteType, args.ToArray());
+                return Activator.CreateInstance(t, args.ToArray());
             }
 
-            return Activator.CreateInstance(concreteType, null);
+            return Activator.CreateInstance(t, null);
         }
 
         /// <summary>
@@ -84,7 +88,7 @@ namespace DependOnMe
         /// </summary>
         /// <param name="requestedType">The type to check if it is registered with the registry</param>
         /// <returns>A boolean value determining if the type is registered</returns>
-        public bool IsRegisteredType (Type requestedType)
+        public bool IsRegisteredType(Type requestedType)
         {
             return _internalRegistry.ContainsKey(requestedType);
         }
