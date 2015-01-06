@@ -8,10 +8,9 @@ namespace Examples
     {
         static void Main(string[] args)
         {
-            //Only works with public constructors as of now and an empty ctor is needed to find the overloaded one
             var reg = new Registry();
 
-            //Registry the types so it knows how to resolve one type to another
+            //Register the types so it knows how to resolve the concrete types
             reg.Register<IUser, User>();
             reg.Register<IUserRepo, InMemoryUserRepo>();
 
