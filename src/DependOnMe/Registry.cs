@@ -6,7 +6,7 @@ using System.Reflection;
 namespace DependOnMe
 {
     /// <summary>
-    /// A simple Dependency Inversion class that uses constructor injection
+    /// A simple Dependency Injection class that uses constructor injection
     /// </summary>
     public class Registry
     {

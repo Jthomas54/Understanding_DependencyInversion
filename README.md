@@ -1,1 +1,1 @@
-Just me trying to understand DI systems a little more in-depth and what is required to make them work
+Just me trying to understand DI frameworks a little more in-depth and what is required to make them work
