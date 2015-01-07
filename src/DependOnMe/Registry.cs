@@ -31,6 +31,14 @@ namespace DependOnMe
         }
 
         /// <summary>
+        /// Removes all registered types
+        /// </summary>
+        public void Clear()
+        {
+            _internalRegistry.Clear();
+        }
+
+        /// <summary>
         /// Gets an instance of the requested type
         /// </summary>
         /// <typeparam name="TRequestedType">The type to resolve</typeparam>
