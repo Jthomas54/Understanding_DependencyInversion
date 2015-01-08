@@ -75,15 +75,7 @@ namespace DependOnMe
             if (ctor.GetParameters().Any())
             {
                 //Check ctor dependencies
-                var args = new List<object>();
-
-                foreach (var param in ctor.GetParameters())
-                {
-                    var paramType = param.ParameterType;
-
-                    args.Add(GetInstance(paramType));
-
-                }
+                var args = ctor.GetParameters().Select(param => GetInstance(param.ParameterType));
 
                 return Activator.CreateInstance(t, args.ToArray());
             }
