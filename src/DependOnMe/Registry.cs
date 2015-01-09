@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+
+//TODO: Support generic types
+//TODO: Support lifetime management
+//TODO: Use Expressions instead?
 namespace DependOnMe
 {
     /// <summary>
@@ -10,14 +14,14 @@ namespace DependOnMe
     /// </summary>
     public class Registry
     {
-        private readonly Dictionary<Type, Type> _internalRegistry;
+        private readonly Dictionary<Type, ConstructorConfig> _internalRegistry;
 
         /// <summary>
         /// Create an instance of the <see cref="Registry"/> class
         /// </summary>
         public Registry()
         {
-            _internalRegistry = new Dictionary<Type, Type>();
+            _internalRegistry = new Dictionary<Type, ConstructorConfig>();
         }
 
         /// <summary>
@@ -27,15 +31,10 @@ namespace DependOnMe
         /// <typeparam name="TConcreteType">The concrete type that will be created when an instance is requested</typeparam>
         public void Register<TRequestedType, TConcreteType>()
         {
-            _internalRegistry.Add(typeof(TRequestedType), typeof(TConcreteType));
-        }
+            var t = typeof (TConcreteType);
+            var config = new ConstructorConfig(t, GetConstructor(t));
 
-        /// <summary>
-        /// Removes all registered types
-        /// </summary>
-        public void Clear()
-        {
-            _internalRegistry.Clear();
+            _internalRegistry.Add(typeof(TRequestedType), config);
         }
 
         /// <summary>
@@ -48,14 +47,27 @@ namespace DependOnMe
             return (TRequestedType) GetInstance(typeof (TRequestedType));
         }
 
-        private object GetInstance(Type type)
+        private object GetInstance(Type t)
         {
-            if (!IsRegisteredType(type)) throw new Exception("The ctor requires a type that isn't registered with the registry.");
+            if (!IsRegisteredType(t)) throw new Exception("The ctor requires a type that isn't registered with the registry.");
 
-            //Find the type to resolve from the requested type
-            var concreteType = _internalRegistry[type];
+            return CreateInstance(t);
+        }
 
-            return CreateInstance(concreteType);
+        /// <summary>
+        /// Get the greediest constructor
+        /// </summary>
+        /// <param name="t">The type to get the greediest constructor's <see cref="ConstructorInfo"/></param>
+        /// <returns><see cref="ConstructorInfo"/> of the greediest ctor</returns>
+        private ConstructorInfo GetConstructor(Type t)
+        {
+            var ctorInfo = t.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
+                        .OrderBy(c => c.GetParameters().Length)
+                        .LastOrDefault();
+
+            if (ctorInfo == null) throw new Exception(string.Format("{0} doesn't have an accessible ctor", t.Name));
+
+            return ctorInfo;
         }
 
         /// <summary>
@@ -65,22 +77,17 @@ namespace DependOnMe
         /// <returns>An instance of the provided type</returns>
         private object CreateInstance(Type t)
         {
-            //Get all the public ctors and select the one with the most parameters
-            var ctor = t.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
-                        .OrderBy(c => c.GetParameters().Length)
-                        .LastOrDefault();
+            var config = _internalRegistry[t];
 
-            if(ctor == null) throw new Exception(string.Format("{0} doesn't have an accessible ctor", t.Name));
-
-            if (ctor.GetParameters().Any())
+            if (config.Constructor.GetParameters().Any())
             {
                 //Check ctor dependencies
-                var args = ctor.GetParameters().Select(param => GetInstance(param.ParameterType));
+                var args = config.Constructor.GetParameters().Select(param => GetInstance(param.ParameterType));
 
-                return Activator.CreateInstance(t, args.ToArray());
+                return Activator.CreateInstance(config.ConcreteType, args.ToArray());
             }
-
-            return Activator.CreateInstance(t, null);
+            
+            return Activator.CreateInstance(config.ConcreteType, null);
         }
 
         /// <summary>
@@ -91,6 +98,14 @@ namespace DependOnMe
         public bool IsRegisteredType(Type requestedType)
         {
             return _internalRegistry.ContainsKey(requestedType);
+        }
+
+        /// <summary>
+        /// Removes all registered types
+        /// </summary>
+        public void Clear()
+        {
+            _internalRegistry.Clear();
         }
     }
 }
