@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 
 
-//TODO: Support generic types
+//TODO: Support open generic types
 //TODO: Support lifetime management
 //TODO: Use Expressions instead?
 namespace DependOnMe
