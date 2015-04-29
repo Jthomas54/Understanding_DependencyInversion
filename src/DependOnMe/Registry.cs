@@ -79,7 +79,7 @@ namespace DependOnMe
         {
             var config = _internalRegistry[t];
 
-            if (config.Constructor.GetParameters().Any())
+            if (config.HasParameters)
             {
                 //Check ctor dependencies
                 var args = config.Constructor.GetParameters().Select(param => GetInstance(param.ParameterType));

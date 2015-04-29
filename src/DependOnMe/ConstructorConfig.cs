@@ -10,11 +10,13 @@ namespace DependOnMe
     {
         public Type ConcreteType { get; private set; }
         public ConstructorInfo Constructor { get; private set; }
+        public bool HasParameters { get; private set; }
 
         public ConstructorConfig(Type t, ConstructorInfo ctorInfo)
         {
             ConcreteType = t;
             Constructor = ctorInfo;
+            HasParameters = ctorInfo.GetParameters().Any();
         }
     }
 }
